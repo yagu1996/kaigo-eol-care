@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生活支援技術：人生の最終段階における介護</title>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --secondary: #0f766e;
+    --accent: #b45309;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif;
+    background-color: #cbd5e1;
+    color: var(--text);
+    overflow: hidden;
+  }
+  ruby { ruby-align: center; }
+  rt { font-size: 0.55em; color: #475569; font-weight: normal; }
+  h1 rt, h2 rt, .title-main rt { color: inherit; opacity: 0.85; }
+
+  .slide-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+  .slide {
+    display: none;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    padding: 40px 60px 70px 60px;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .slide.active { display: flex; }
+
+  /* タイトルスライド用 */
+  .slide.cover {
+    background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%);
+    color: #ffffff;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .cover .course-tag {
+    font-size: 1.5rem;
+    background: rgba(255,255,255,0.2);
+    padding: 8px 24px;
+    border-radius: 30px;
+    margin-bottom: 24px;
+  }
+  .cover .title-main {
+    font-size: 3.2rem;
+    font-weight: bold;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  .cover .sub-list {
+    font-size: 1.5rem;
+    line-height: 2.0;
+    background: rgba(0,0,0,0.25);
+    padding: 20px 40px;
+    border-radius: 12px;
+    text-align: left;
+  }
+
+  /* 通常スライドヘッダー */
+  .slide-header {
+    border-bottom: 4px solid var(--primary);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .slide-header h2 {
+    font-size: 2.1rem;
+    color: var(--primary);
+    line-height: 1.5;
+  }
+  .badge {
+    background: var(--secondary);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  .badge rt { color: #e2e8f0; }
+
+  /* コンテンツ要素 */
+  .content-box {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    margin-bottom: 18px;
+    font-size: 1.35rem;
+    line-height: 2.0;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    flex: 1;
+  }
+  .card {
+    background: var(--card-bg);
+    border-left: 6px solid var(--secondary);
+    border-radius: 10px;
+    padding: 20px 24px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    font-size: 1.25rem;
+    line-height: 1.95;
+  }
+  .card h3 {
+    color: var(--secondary);
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+  .card.warn { border-left-color: var(--accent); }
+  .card.warn h3 { color: var(--accent); }
+
+  ul { padding-left: 1.5em; }
+  li { margin-bottom: 10px; }
+  .highlight {
+    background: #fef08a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+
+  table.slide-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 1.18rem;
+    line-height: 1.85;
+  }
+  table.slide-table th, table.slide-table td {
+    border: 1px solid #cbd5e1;
+    padding: 12px 16px;
+    text-align: left;
+  }
+  table.slide-table th {
+    background: #eff6ff;
+    color: var(--primary);
+    width: 22%;
+  }
+
+  /* ナビゲーション */
+  .nav-bar {
+    position: fixed;
+    bottom: 16px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+  }
+  .nav-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .nav-btn:hover { opacity: 0.9; }
+  .page-num {
+    font-size: 1.1rem;
+    font-weight: bold;
+    background: rgba(255,255,255,0.85);
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+
+  /* 印刷・PDF出力時に見切れない設定 */
+  @media print {
+    @page { size: A4 landscape; margin: 8mm; }
+    body { overflow: visible; background: #fff; }
+    .slide-container { height: auto; width: 100%; }
+    .slide {
+      display: flex !important;
+      width: 100%;
+      height: 190mm;
+      padding: 12mm 15mm;
+      page-break-after: always;
+      break-after: page;
+      box-shadow: none;
+    }
+    .nav-bar { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="slide-container">
+
+  <!-- Slide 1: 表紙 -->
+  <section class="slide cover active">
+    <div class="course-tag"><ruby>授業<rt>じゅぎょう</rt></ruby><ruby>科目<rt>かもく</rt></ruby>：<ruby>生活<rt>せいかつ</rt></ruby><ruby>支援<rt>しえん</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby>（90<ruby>分<rt>ぷん</rt></ruby>×2コマ）</div>
+    <div class="title-main"><ruby>人生<rt>じんせい</rt></ruby>の<ruby>最終<rt>さいしゅう</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>における<ruby>介護<rt>かいご</rt></ruby></div>
+    <div class="sub-list">
+      ・エンドオブライフ・ケア<br>
+      ・<ruby>自分<rt>じぶん</rt></ruby>にとって<ruby>望<rt>のぞ</rt></ruby>ましい<ruby>死<rt>し</rt></ruby>の<ruby>在<rt>あ</rt></ruby>り<ruby>方<rt>かた</rt></ruby><br>
+      ・<ruby>他者<rt>たしゃ</rt></ruby>にとって<ruby>望<rt>のぞ</rt></ruby>ましい<ruby>死<rt>し</rt></ruby>の<ruby>在<rt>あ</rt></ruby>り<ruby>方<rt>かた</rt></ruby>
+    </div>
+  </section>
+
+  <!-- Slide 2: 到達目標と授業の約束 -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2><ruby>本講義<rt>ほんこうぎ</rt></ruby>の<ruby>到達<rt>とうたつ</rt></ruby><ruby>目標<rt>もくひょう</rt></ruby>と<ruby>大切<rt>たいせつ</rt></ruby>な<ruby>約束<rt>やくそく</rt></ruby></h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>1コマ：<ruby>導入<rt>どうにゅう</rt></ruby></span>
+    </div>
+    <div class="content-box">
+      <ul>
+        <li><strong><ruby>目標<rt>もくひょう</rt></ruby>1：</strong>エンドオブライフ・ケアの<ruby>意味<rt>いみ</rt></ruby>と、ターミナルケアとの<ruby>違<rt>ちが</rt></ruby>いを<ruby>説明<rt>せつめい</rt></ruby>できる。</li>
+        <li><strong><ruby>目標<rt>もくひょう</rt></ruby>2：</strong><ruby>自分<rt>じぶん</rt></ruby><ruby>自身<rt>じしん</rt></ruby>の「<ruby>死生観<rt>しせいかん</rt></ruby>（<ruby>生<rt>い</rt></ruby>き<ruby>方<rt>かた</rt></ruby>・<ruby>最期<rt>さいご</rt></ruby>の<ruby>迎<rt>むか</rt></ruby>え<ruby>方<rt>かた</rt></ruby>の<ruby>考<rt>かんが</rt></ruby>え）」に<ruby>気<rt>き</rt></ruby>づく。</li>
+        <li><strong><ruby>目標<rt>もくひょう</rt></ruby>3：</strong><ruby>利用者<rt>りようしゃ</rt></ruby>（<ruby>他者<rt>たしゃ</rt></ruby>）と<ruby>家族<rt>かぞく</rt></ruby>の<ruby>思<rt>おも</rt></ruby>いを<ruby>尊重<rt>そんちょう</rt></ruby>し、<ruby>苦痛<rt>くつう</rt></ruby>を<ruby>和<rt>やわ</rt></ruby>らげる<ruby>生活<rt>せいかつ</rt></ruby><ruby>支援<rt>しえん</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby>を<ruby>考<rt>かんが</rt></ruby>えることができる。</li>
+      </ul>
+    </div>
+    <div class="card warn">
+      <h3><ruby>授業<rt>じゅぎょう</rt></ruby>を<ruby>受<rt>う</rt></ruby>けるうえでの<ruby>安心<rt>あんしん</rt></ruby>ルール</h3>
+      <p>「<ruby>死<rt>し</rt></ruby>」についての<ruby>考<rt>かんが</rt></ruby>え<ruby>方<rt>かた</rt></ruby>は、<ruby>国<rt>くに</rt></ruby>・<ruby>文化<rt>ぶんか</rt></ruby>・<ruby>宗教<rt>しゅうきょう</rt></ruby>・<ruby>個人<rt>こじん</rt></ruby>の<ruby>経験<rt>けいけん</rt></ruby>によって<ruby>一人<rt>ひとり</rt></ruby>ひとり<ruby>異<rt>こと</rt></ruby>なります。<ruby>正解<rt>せいかい</rt></ruby>はありません。<ruby>家族<rt>かぞく</rt></ruby>などの<ruby>別<rt>わか</rt></ruby>れを<ruby>思<rt>おも</rt></ruby>い<ruby>出<rt>だ</rt></ruby>してつらいときは、<ruby>無理<rt>むり</rt></ruby>に<ruby>話<rt>はな</rt></ruby>さなくても<ruby>大丈夫<rt>だいじょうぶ</rt></ruby>です。<ruby>互<rt>たが</rt></ruby>いの<ruby>意見<rt>いけん</rt></ruby>を<ruby>否定<rt>ひてい</rt></ruby>せず、<ruby>温<rt>あたた</rt></ruby>かく<ruby>聴<rt>き</rt></ruby>き<ruby>合<rt>あ</rt></ruby>いましょう。</p>
+    </div>
+  </section>
+
+  <!-- Slide 3: なぜ介護福祉士が学ぶのか -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2>なぜ<ruby>介護<rt>かいご</rt></ruby><ruby>福祉士<rt>ふくしし</rt></ruby>が「<ruby>人生<rt>じんせい</rt></ruby>の<ruby>最終<rt>さいしゅう</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>」を<ruby>学<rt>まな</rt></ruby>ぶのか</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>1コマ：<ruby>現状<rt>げんじょう</rt></ruby></span>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3><ruby>亡<rt>な</rt></ruby>くなる<ruby>場所<rt>ばしょ</rt></ruby>の<ruby>変化<rt>へんか</rt></ruby></h3>
+        <ul>
+          <li><ruby>以前<rt>いぜん</rt></ruby>は「<ruby>病院<rt>びょういん</rt></ruby>」で<ruby>亡<rt>な</rt></ruby>くなる<ruby>人<rt>ひと</rt></ruby>が<ruby>大半<rt>たいはん</rt></ruby>だった。</li>
+          <li><ruby>高齢化<rt>こうれいか</rt></ruby>の<ruby>進行<rt>しんこう</rt></ruby>により、<span class="highlight"><ruby>介護<rt>かいご</rt></ruby><ruby>施設<rt>しせつ</rt></ruby>や<ruby>自宅<rt>じたく</rt></ruby></span>で<ruby>最期<rt>さいご</rt></ruby>を<ruby>迎<rt>むか</rt></ruby>える（<ruby>看取<rt>みと</rt></ruby>り）ケースが<ruby>大<rt>おお</rt></ruby>きく<ruby>増<rt>ふ</rt></ruby>えている。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><ruby>介護<rt>かいご</rt></ruby><ruby>福祉士<rt>ふくしし</rt></ruby>の<ruby>専門性<rt>せんもんせい</rt></ruby></h3>
+        <ul>
+          <li><ruby>医療職<rt>いりょうしょく</rt></ruby>は「<ruby>治療<rt>ちりょう</rt></ruby>・<ruby>症状<rt>しょうじょう</rt></ruby><ruby>緩和<rt>かんわ</rt></ruby>」の<ruby>専門家<rt>せんもんか</rt></ruby>。</li>
+          <li><ruby>介護<rt>かいご</rt></ruby><ruby>福祉士<rt>ふくしし</rt></ruby>は、<span class="highlight"><ruby>最期<rt>さいご</rt></ruby>の<ruby>瞬間<rt>しゅんかん</rt></ruby>まで「その<ruby>人<rt>ひと</rt></ruby>らしい<ruby>日常生活<rt>にちじょうせいかつ</rt></ruby>」を<ruby>支<rt>ささ</rt></ruby>える</span><ruby>専門家<rt>せんもんか</rt></ruby>である。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 4: エンドオブライフ・ケアとは -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2>エンドオブライフ・ケア（End-of-Life Care）とは</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>1コマ：サブテーマ1</span>
+    </div>
+    <table class="slide-table">
+      <tr>
+        <th>ターミナルケア<br>（<ruby>終末期<rt>しゅうまつき</rt></ruby>ケア）</th>
+        <td><ruby>主<rt>おも</rt></ruby>にがん<ruby>末期<rt>まっき</rt></ruby>など、<ruby>治療<rt>ちりょう</rt></ruby>による<ruby>回復<rt>かいふく</rt></ruby>が<ruby>見込<rt>みこ</rt></ruby>めず、<ruby>余命<rt>よめい</rt></ruby>が<ruby>数週間<rt>すうしゅうかん</rt></ruby>〜<ruby>数<rt>すう</rt></ruby>ヶ<ruby>月<rt>げつ</rt></ruby>と<ruby>限<rt>かぎ</rt></ruby>られた<ruby>時期<rt>じき</rt></ruby>のケア。</td>
+      </tr>
+      <tr>
+        <th><ruby>緩和<rt>かんわ</rt></ruby>ケア</th>
+        <td><ruby>生命<rt>せいめい</rt></ruby>を<ruby>脅<rt>おびや</rt></ruby>かす<ruby>病気<rt>びょうき</rt></ruby>による<ruby>苦痛<rt>くつう</rt></ruby>を、<ruby>診断<rt>しんだん</rt></ruby>された<ruby>早<rt>はや</rt></ruby>い<ruby>段階<rt>だんかい</rt></ruby>から<ruby>和<rt>やわ</rt></ruby>らげ、QOL（<ruby>生活<rt>せいかつ</rt></ruby>の<ruby>質<rt>しつ</rt></ruby>）を<ruby>高<rt>たか</rt></ruby>めるケア。</td>
+      </tr>
+      <tr>
+        <th>エンドオブライフ・ケア</th>
+        <td><span class="highlight"><ruby>病名<rt>びょうめい</rt></ruby>や<ruby>余命<rt>よめい</rt></ruby>の<ruby>長短<rt>ちょうたん</rt></ruby>に<ruby>関<rt>かか</rt></ruby>わらず</span>、<ruby>老衰<rt>ろうすい</rt></ruby>や<ruby>認知症<rt>にんちしょう</rt></ruby>も<ruby>含<rt>ふく</rt></ruby>め、「<ruby>自分<rt>じぶん</rt></ruby>の<ruby>人生<rt>じんせい</rt></ruby>の<ruby>終<rt>お</rt></ruby>わり」を<ruby>意識<rt>いしき</rt></ruby>したときから<ruby>最期<rt>さいご</rt></ruby>まで、<strong>どう<ruby>生<rt>い</rt></ruby>き<ruby>抜<rt>ぬ</rt></ruby>くかを<ruby>支<rt>ささ</rt></ruby>えるケア</strong>。</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- Slide 5: トータルペイン（全人的苦痛） -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2><ruby>全人的<rt>ぜんじんてき</rt></ruby><ruby>苦痛<rt>くつう</rt></ruby>（トータルペイン）の<ruby>理解<rt>りかい</rt></ruby></h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>1コマ：サブテーマ1</span>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>① <ruby>身体的<rt>しんたいてき</rt></ruby><ruby>苦痛<rt>くつう</rt></ruby></h3>
+        <p><ruby>痛<rt>いた</rt></ruby>み、<ruby>息苦<rt>いきぐる</rt></ruby>しさ、<ruby>体<rt>からだ</rt></ruby>のだるさ、<ruby>便秘<rt>べんぴ</rt></ruby>、<ruby>口<rt>くち</rt></ruby>の<ruby>渇<rt>かわ</rt></ruby>き、<ruby>褥瘡<rt>じょくそう</rt></ruby>など。</p>
+      </div>
+      <div class="card">
+        <h3>② <ruby>精神的<rt>せいしんてき</rt></ruby><ruby>苦痛<rt>くつう</rt></ruby></h3>
+        <p><ruby>死<rt>し</rt></ruby>への<ruby>恐怖<rt>きょうふ</rt></ruby>、<ruby>不安<rt>ふあん</rt></ruby>、<ruby>孤独感<rt>こどくかん</rt></ruby>、イライラ、<ruby>気持<rt>きも</rt></ruby>ちの<ruby>落<rt>お</rt></ruby>ち<ruby>込<rt>こ</rt></ruby>みなど。</p>
+      </div>
+      <div class="card">
+        <h3>③ <ruby>社会的<rt>しゃかいてき</rt></ruby><ruby>苦痛<rt>くつう</rt></ruby></h3>
+        <p><ruby>仕事<rt>しごと</rt></ruby>や<ruby>家庭内<rt>かていない</rt></ruby>での<ruby>役割<rt>やくわり</rt></ruby>の<ruby>喪失<rt>そうしつ</rt></ruby>、<ruby>経済的<rt>けいざいてき</rt></ruby>な<ruby>不安<rt>ふあん</rt></ruby>、<ruby>家族<rt>かぞく</rt></ruby>への<ruby>遠慮<rt>えんりょ</rt></ruby>など。</p>
+      </div>
+      <div class="card">
+        <h3>④ スピリチュアルペイン（<ruby>霊的<rt>れいてき</rt></ruby><ruby>苦痛<rt>くつう</rt></ruby>）</h3>
+        <p>「<ruby>自分<rt>じぶん</rt></ruby>の<ruby>人生<rt>じんせい</rt></ruby>に<ruby>意味<rt>いみ</rt></ruby>はあったのか」「なぜ<ruby>自分<rt>じぶん</rt></ruby>だけこんな<ruby>目<rt>め</rt></ruby>に<ruby>遭<rt>あ</rt></ruby>うのか」という<ruby>苦<rt>くる</rt></ruby>しみ。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 6: ワーク1「自分にとって望ましい死」 -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2>【ワーク1】<ruby>自分<rt>じぶん</rt></ruby>にとって<ruby>望<rt>のぞ</rt></ruby>ましい<ruby>死<rt>し</rt></ruby>の<ruby>在<rt>あ</rt></ruby>り<ruby>方<rt>かた</rt></ruby></h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>1コマ：サブテーマ2</span>
+    </div>
+    <div class="content-box">
+      <p><strong>スマートフォン／PCで<ruby>学生用<rt>がくせいよう</rt></ruby>アプリの「ワーク1」を<ruby>開<rt>ひら</rt></ruby>いてください。</strong></p>
+      <p>もし、<ruby>自分<rt>じぶん</rt></ruby>の<ruby>人生<rt>じんせい</rt></ruby>の<ruby>残<rt>のこ</rt></ruby>り<ruby>時間<rt>じかん</rt></ruby>が「あと<ruby>半年<rt>はんとし</rt></ruby>」だとしたら、<ruby>何<rt>なに</rt></ruby>を<ruby>一番<rt>いちばん</rt></ruby><ruby>大切<rt>たいせつ</rt></ruby>にしたいですか？リストから<strong>3つ</strong><ruby>選<rt>えら</rt></ruby>び、<ruby>理由<rt>りゆう</rt></ruby>を<ruby>入力<rt>にゅうりょく</rt></ruby>しましょう。</p>
+    </div>
+    <div class="card warn">
+      <h3>グループ<ruby>共有<rt>きょうゆう</rt></ruby>での<ruby>注目<rt>ちゅうもく</rt></ruby>ポイント（<ruby>自己<rt>じこ</rt></ruby><ruby>覚知<rt>かくち</rt></ruby>）</h3>
+      <p>メンバーと<ruby>比<rt>くら</rt></ruby>べてみると、<ruby>選<rt>えら</rt></ruby>ぶものが<ruby>全<rt>まった</rt></ruby>く<ruby>違<rt>ちが</rt></ruby>うことに<ruby>気<rt>き</rt></ruby>づきます。<br>
+      つまり、<span class="highlight">「<ruby>私<rt>わたし</rt></ruby>（<ruby>介護職<rt>かいごしょく</rt></ruby>）が<ruby>良<rt>よ</rt></ruby>いと<ruby>思<rt>おも</rt></ruby>う<ruby>最期<rt>さいご</rt></ruby>」＝「<ruby>利用者<rt>りようしゃ</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>む<ruby>最期<rt>さいご</rt></ruby>」ではない</span>のです。<ruby>自分<rt>じぶん</rt></ruby>の<ruby>価値観<rt>かちかん</rt></ruby>を<ruby>押<rt>お</rt></ruby>しつけないために、まず<ruby>自分<rt>じぶん</rt></ruby>の<ruby>考<rt>かんが</rt></ruby>えのクセを<ruby>知<rt>し</rt></ruby>ることが<ruby>出発点<rt>しゅっぱつてん</rt></ruby>になります。</p>
+    </div>
+  </section>
+
+  <!-- Slide 7: 第2コマ 他者にとって望ましい死とACP -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2><ruby>他者<rt>たしゃ</rt></ruby>にとって<ruby>望<rt>のぞ</rt></ruby>ましい<ruby>死<rt>し</rt></ruby>とACP（<ruby>人生<rt>じんせい</rt></ruby><ruby>会議<rt>かいぎ</rt></ruby>）</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>2コマ：サブテーマ3</span>
+    </div>
+    <div class="content-box">
+      <p><strong>ACP（アドバンス・ケア・プランニング／<ruby>人生<rt>じんせい</rt></ruby><ruby>会議<rt>かいぎ</rt></ruby>）：</strong><br>
+      もしものときに<ruby>備<rt>そな</rt></ruby>え、<ruby>本人<rt>ほんにん</rt></ruby>が<ruby>望<rt>のぞ</rt></ruby>む<ruby>医療<rt>いりょう</rt></ruby>やケアについて、<ruby>前<rt>まえ</rt></ruby>もって<ruby>家族<rt>かぞく</rt></ruby>や<ruby>医療<rt>いりょう</rt></ruby>・ケアチームと<span class="highlight"><ruby>繰<rt>く</rt></ruby>り<ruby>返<rt>かえ</rt></ruby>し<ruby>話<rt>はな</rt></ruby>し<ruby>合<rt>あ</rt></ruby>い、<ruby>共有<rt>きょうゆう</rt></ruby>する</span>プロセス。</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3><ruby>日常<rt>にちじょう</rt></ruby>からの<ruby>手<rt>て</rt></ruby>がかり</h3>
+        <p><ruby>認知症<rt>にんちしょう</rt></ruby>などで<ruby>言葉<rt>ことば</rt></ruby>にできなくても、<ruby>生活歴<rt>せいかつれき</rt></ruby>・<ruby>好物<rt>こうぶつ</rt></ruby>・<ruby>普段<rt>ふだん</rt></ruby>の<ruby>表情<rt>ひょうじょう</rt></ruby>・<ruby>何気<rt>なにげ</rt></ruby>ないつぶやきから「その<ruby>人<rt>ひと</rt></ruby>らしさ」を<ruby>汲<rt>く</rt></ruby>み<ruby>取<rt>と</rt></ruby>る。</p>
+      </div>
+      <div class="card warn">
+        <h3><ruby>心<rt>こころ</rt></ruby>は「<ruby>揺<rt>ゆ</rt></ruby>れ<ruby>動<rt>うご</rt></ruby>く」もの</h3>
+        <p><ruby>一度<rt>いちど</rt></ruby>「<ruby>延命<rt>えんめい</rt></ruby>しない」と<ruby>決<rt>き</rt></ruby>めても、<ruby>状態<rt>じょうたい</rt></ruby>が<ruby>変<rt>か</rt></ruby>われば<ruby>本人<rt>ほんにん</rt></ruby>も<ruby>家族<rt>かぞく</rt></ruby>も<ruby>迷<rt>まよ</rt></ruby>う。その<ruby>揺<rt>ゆ</rt></ruby>らぎを<ruby>受<rt>う</rt></ruby>け<ruby>止<rt>と</rt></ruby>め、<ruby>何度<rt>なんど</rt></ruby>でも<ruby>対話<rt>たいわ</rt></ruby>する。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 8: 終末期の身体変化と生活支援技術① -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2><ruby>最終<rt>さいしゅう</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>の<ruby>身体<rt>しんたい</rt></ruby><ruby>変化<rt>へんか</rt></ruby>と<ruby>生活<rt>せいかつ</rt></ruby><ruby>支援<rt>しえん</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby>（1）</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>2コマ：<ruby>介護<rt>かいご</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby></span>
+    </div>
+    <table class="slide-table">
+      <tr>
+        <th><ruby>食事<rt>しょくじ</rt></ruby>・<ruby>水分<rt>すいぶん</rt></ruby>・<ruby>口腔<rt>こうくう</rt></ruby></th>
+        <td>
+          ・<ruby>老衰<rt>ろうすい</rt></ruby>が<ruby>進<rt>すす</rt></ruby>むと<ruby>体<rt>からだ</rt></ruby>が<ruby>栄養<rt>えいよう</rt></ruby>を<ruby>必要<rt>ひつよう</rt></ruby>としなくなり、<ruby>無理<rt>むり</rt></ruby>な<ruby>食事<rt>しょくじ</rt></ruby>や<ruby>過剰<rt>かじょう</rt></ruby>な<ruby>点滴<rt>てんてき</rt></ruby>は<ruby>誤嚥<rt>ごえん</rt></ruby>・むくみ・<ruby>痰<rt>たん</rt></ruby>の<ruby>増加<rt>ぞうか</rt></ruby>につながる。<br>
+          ・<strong><ruby>支援<rt>しえん</rt></ruby>：</strong><ruby>医療職<rt>いりょうしょく</rt></ruby>と<ruby>連携<rt>れんけい</rt></ruby>し、<ruby>好<rt>す</rt></ruby>きな<ruby>飲<rt>の</rt></ruby>み<ruby>物<rt>もの</rt></ruby>で<ruby>唇<rt>くちびる</rt></ruby>を<ruby>湿<rt>しめ</rt></ruby>らせる、<ruby>丁寧<rt>ていねい</rt></ruby>な<ruby>口腔<rt>こうくう</rt></ruby><ruby>清拭<rt>せいしき</rt></ruby>と<ruby>保湿<rt>ほしつ</rt></ruby>で<ruby>不快感<rt>ふかいかん</rt></ruby>を<ruby>取<rt>と</rt></ruby>り<ruby>除<rt>のぞ</rt></ruby>く。
+        </td>
+      </tr>
+      <tr>
+        <th><ruby>排泄<rt>はいせつ</rt></ruby></th>
+        <td>
+          ・<ruby>水分<rt>すいぶん</rt></ruby><ruby>量<rt>りょう</rt></ruby>が<ruby>減<rt>へ</rt></ruby>り<ruby>尿量<rt>にょうりょう</rt></ruby>は<ruby>減少<rt>げんしょう</rt></ruby>するが、<ruby>自尊心<rt>じそんしん</rt></ruby>（プライド）に<ruby>強<rt>つよ</rt></ruby>く<ruby>関<rt>かか</rt></ruby>わる。<br>
+          ・<strong><ruby>支援<rt>しえん</rt></ruby>：</strong><ruby>体力<rt>たいりょく</rt></ruby>を<ruby>見極<rt>みきわ</rt></ruby>めつつ<ruby>希望<rt>きぼう</rt></ruby>に<ruby>沿<rt>そ</rt></ruby>う。おむつ<ruby>交換<rt>こうかん</rt></ruby><ruby>時<rt>じ</rt></ruby>はプライバシーを<ruby>守<rt>まも</rt></ruby>り、<ruby>皮膚<rt>ひふ</rt></ruby>を<ruby>保護<rt>ほご</rt></ruby>する。
+        </td>
+      </tr>
+      <tr>
+        <th><ruby>清潔<rt>せいけつ</rt></ruby>・<ruby>衣生活<rt>いせいかつ</rt></ruby></th>
+        <td>
+          ・<ruby>全身浴<rt>ぜんしんよく</rt></ruby>は<ruby>体力<rt>たいりょく</rt></ruby><ruby>消耗<rt>しょうもう</rt></ruby>が<ruby>大<rt>おお</rt></ruby>きい。<br>
+          ・<strong><ruby>支援<rt>しえん</rt></ruby>：</strong><ruby>温<rt>あたた</rt></ruby>かいタオルでの<ruby>清拭<rt>せいしき</rt></ruby>や<ruby>足浴<rt>そくよく</rt></ruby>・<ruby>手浴<rt>しゅよく</rt></ruby>に<ruby>切<rt>き</rt></ruby>り<ruby>替<rt>か</rt></ruby>え、<ruby>肌触<rt>はだざわ</rt></ruby>りの<ruby>良<rt>よ</rt></ruby>い<ruby>衣類<rt>いるい</rt></ruby>で<ruby>心地<rt>ここち</rt></ruby>よさを<ruby>保<rt>たも</rt></ruby>つ。
+        </td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- Slide 9: 終末期の身体変化と生活支援技術② -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2><ruby>最終<rt>さいしゅう</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>の<ruby>身体<rt>しんたい</rt></ruby><ruby>変化<rt>へんか</rt></ruby>と<ruby>生活<rt>せいかつ</rt></ruby><ruby>支援<rt>しえん</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby>（2）</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>2コマ：<ruby>介護<rt>かいご</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby></span>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3><ruby>安楽<rt>あんらく</rt></ruby>な<ruby>体位<rt>たいい</rt></ruby>と<ruby>環境<rt>かんきょう</rt></ruby>づくり</h3>
+        <ul>
+          <li>クッションを<ruby>使<rt>つか</rt></ruby>い、<ruby>圧迫<rt>あっぱく</rt></ruby>がなく<ruby>呼吸<rt>こきゅう</rt></ruby>しやすいポジショニングを<ruby>行<rt>おこな</rt></ruby>う。</li>
+          <li><span class="highlight"><ruby>聴覚<rt>ちょうかく</rt></ruby>（<ruby>耳<rt>みみ</rt></ruby>）は<ruby>最期<rt>さいご</rt></ruby>まで<ruby>残<rt>のこ</rt></ruby>る</span>ため、<ruby>反応<rt>はんのう</rt></ruby>がなくても<ruby>優<rt>やさ</rt></ruby>しく<ruby>声<rt>こえ</rt></ruby>をかけ、<ruby>好<rt>す</rt></ruby>きな<ruby>音楽<rt>おんがく</rt></ruby>や<ruby>写真<rt>しゃしん</rt></ruby>を<ruby>飾<rt>かざ</rt></ruby>る。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><ruby>家族<rt>かぞく</rt></ruby><ruby>支援<rt>しえん</rt></ruby>とエンゼルケア</h3>
+        <ul>
+          <li><ruby>家族<rt>かぞく</rt></ruby>が<ruby>部屋<rt>へや</rt></ruby>で<ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>過<rt>す</rt></ruby>ごしやすい<ruby>椅子<rt>いす</rt></ruby>などを<ruby>整<rt>ととの</rt></ruby>え、<ruby>不安<rt>ふあん</rt></ruby>や<ruby>疲<rt>つか</rt></ruby>れをねぎらう。</li>
+          <li><strong>エンゼルケア（<ruby>死後<rt>しご</rt></ruby>のケア）：</strong><ruby>尊厳<rt>そんげん</rt></ruby>を<ruby>守<rt>まも</rt></ruby>り、<ruby>家族<rt>かぞく</rt></ruby>と<ruby>一緒<rt>いっしょ</rt></ruby>に<ruby>整容<rt>せいよう</rt></ruby>を<ruby>行<rt>おこな</rt></ruby>うことで、<ruby>心<rt>こころ</rt></ruby>のケア（グリーフケア）につなげる。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 10: ワーク2 事例検討 -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2>【ワーク2】<ruby>事例<rt>じれい</rt></ruby><ruby>検討<rt>けんとう</rt></ruby>：<ruby>他者<rt>たしゃ</rt></ruby>にとって<ruby>望<rt>のぞ</rt></ruby>ましい<ruby>最期<rt>さいご</rt></ruby>を<ruby>支<rt>ささ</rt></ruby>える</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>2コマ：<ruby>演習<rt>えんしゅう</rt></ruby></span>
+    </div>
+    <div class="content-box" style="font-size: 1.22rem;">
+      <p><strong>【<ruby>事例<rt>じれい</rt></ruby>】Aさん（88<ruby>歳<rt>さい</rt></ruby>・<ruby>女性<rt>じょせい</rt></ruby>・<ruby>要介護<rt>ようかいご</rt></ruby>5・アルツハイマー<ruby>型<rt>がた</rt></ruby><ruby>認知症<rt>にんちしょう</rt></ruby>・<ruby>老衰<rt>ろうすい</rt></ruby>）</strong><br>
+      <ruby>特別<rt>とくべつ</rt></ruby><ruby>養護<rt>ようご</rt></ruby><ruby>老人<rt>ろうじん</rt></ruby>ホーム<ruby>入所<rt>にゅうしょ</rt></ruby>4<ruby>年<rt>ねん</rt></ruby>。<ruby>歌<rt>うた</rt></ruby>と<ruby>抹茶<rt>まっちゃ</rt></ruby>・<ruby>羊羹<rt>ようかん</rt></ruby>が<ruby>大好き<rt>だいすき</rt></ruby>だった。1ヶ<ruby>月前<rt>げつまえ</rt></ruby>から<ruby>食事<rt>しょくじ</rt></ruby><ruby>量<rt>りょう</rt></ruby>が<ruby>減<rt>へ</rt></ruby>り、<ruby>今<rt>いま</rt></ruby>は<ruby>一日<rt>いちにち</rt></ruby>の<ruby>大半<rt>たいはん</rt></ruby>を<ruby>眠<rt>ねむ</rt></ruby>って<ruby>過<rt>す</rt></ruby>ごし、<ruby>水分<rt>すいぶん</rt></ruby>でむせる。<ruby>以前<rt>いぜん</rt></ruby>は<ruby>本人<rt>ほんにん</rt></ruby>も<ruby>長女<rt>ちょうじょ</rt></ruby>も「<ruby>延命<rt>えんめい</rt></ruby><ruby>治療<rt>ちりょう</rt></ruby>はせず<ruby>施設<rt>しせつ</rt></ruby>で<ruby>穏<rt>おだ</rt></ruby>やかに」と<ruby>希望<rt>きぼう</rt></ruby>していた。<br>
+      しかし<ruby>今日<rt>きょう</rt></ruby>、<ruby>面会<rt>めんかい</rt></ruby>に<ruby>来<rt>き</rt></ruby>た<ruby>長女<rt>ちょうじょ</rt></ruby>が<ruby>涙<rt>なみだ</rt></ruby>ぐみ、<strong>「こんなに<ruby>食<rt>た</rt></ruby>べられないなら、<ruby>病院<rt>びょういん</rt></ruby>で<ruby>点滴<rt>てんてき</rt></ruby>してもらった<ruby>方<rt>ほう</rt></ruby>がいいのでしょうか…<ruby>見殺<rt>みごろ</rt></ruby>しにしているみたいでつらいです」</strong>と<ruby>話<rt>はな</rt></ruby>しかけてきた。</p>
+    </div>
+    <div class="card">
+      <p><strong>アプリの「ワーク2」を<ruby>開<rt>ひら</rt></ruby>き、①<ruby>長女<rt>ちょうじょ</rt></ruby>の<ruby>気持<rt>きも</rt></ruby>ち、②<ruby>声<rt>こえ</rt></ruby>かけと<ruby>多職種<rt>たしょくしゅ</rt></ruby><ruby>連携<rt>れんけい</rt></ruby>、③Aさんらしい<ruby>生活<rt>せいかつ</rt></ruby><ruby>支援<rt>しえん</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby>を<ruby>考<rt>かんが</rt></ruby>えて<ruby>入力<rt>にゅうりょく</rt></ruby>・<ruby>提出<rt>ていしゅつ</rt></ruby>しましょう。</strong></p>
+    </div>
+  </section>
+
+  <!-- Slide 11: まとめ -->
+  <section class="slide">
+    <div class="slide-header">
+      <h2><ruby>全体<rt>ぜんたい</rt></ruby>のまとめ：<ruby>最期<rt>さいご</rt></ruby>まで「<ruby>生<rt>い</rt></ruby>きる」を<ruby>支<rt>ささ</rt></ruby>える</h2>
+      <span class="badge"><ruby>第<rt>だい</rt></ruby>2コマ：まとめ</span>
+    </div>
+    <div class="content-box">
+      <ul>
+        <li>エンドオブライフ・ケアとは、「<ruby>死<rt>し</rt></ruby>を<ruby>待<rt>ま</rt></ruby>つケア」ではなく、<span class="highlight"><ruby>最期<rt>さいご</rt></ruby>の<ruby>瞬間<rt>しゅんかん</rt></ruby>までその<ruby>人<rt>ひと</rt></ruby>らしく「<ruby>生<rt>い</rt></ruby>き<ruby>抜<rt>ぬ</rt></ruby>く」ことを<ruby>支<rt>ささ</rt></ruby>えるケア</span>である。</li>
+        <li><ruby>自分<rt>じぶん</rt></ruby>の<ruby>死生観<rt>しせいかん</rt></ruby>を<ruby>知<rt>し</rt></ruby>ることで、<ruby>他者<rt>たしゃ</rt></ruby>（<ruby>利用者<rt>りようしゃ</rt></ruby>・<ruby>家族<rt>かぞく</rt></ruby>）の<ruby>異<rt>こと</rt></ruby>なる<ruby>価値観<rt>かちかん</rt></ruby>や<ruby>揺<rt>ゆ</rt></ruby>れ<ruby>動<rt>うご</rt></ruby>く<ruby>気持<rt>きも</rt></ruby>ちに<ruby>寄<rt>よ</rt></ruby>り<ruby>添<rt>そ</rt></ruby>うことができる。</li>
+        <li>「<ruby>何<rt>なに</rt></ruby>もできなくなる」のではなく、<ruby>口腔<rt>こうくう</rt></ruby><ruby>保湿<rt>ほしつ</rt></ruby>・<ruby>清拭<rt>せいしき</rt></ruby>・ポジショニング・<ruby>環境<rt>かんきょう</rt></ruby>づくり・<ruby>家族<rt>かぞく</rt></ruby>と<ruby>共<rt>とも</rt></ruby>に<ruby>行<rt>おこな</rt></ruby>うケアへと<strong>「<ruby>心地<rt>ここち</rt></ruby>よさを<ruby>届<rt>とど</rt></ruby>ける<ruby>技術<rt>ぎじゅつ</rt></ruby>」に<ruby>切<rt>き</rt></ruby>り<ruby>替<rt>か</rt></ruby>える</strong>ことが、<ruby>介護<rt>かいご</rt></ruby><ruby>福祉士<rt>ふくしし</rt></ruby>の<ruby>専門性<rt>せんもんせい</rt></ruby>である。</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav-bar">
+  <button class="nav-btn" onclick="changeSlide(-1)">◀ <ruby>前<rt>まえ</rt></ruby>へ</button>
+  <span class="page-num" id="pageIndicator">1 / 11</span>
+  <button class="nav-btn" onclick="changeSlide(1)"><ruby>次<rt>つぎ</rt></ruby>へ ▶</button>
+</div>
+
+<script>
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('.slide');
+  const indicator = document.getElementById('pageIndicator');
+
+  function showSlide(index) {
+    if (index < 0) index = 0;
+    if (index >= slides.length) index = slides.length - 1;
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    currentSlide = index;
+    indicator.textContent = `${currentSlide + 1} / ${slides.length}`;
+  }
+
+  function changeSlide(step) {
+    showSlide(currentSlide + step);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      changeSlide(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      changeSlide(-1);
+    }
+  });
+</script>
+</body>
+</html>
