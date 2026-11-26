@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import io
+import html
 
 st.set_page_config(
     page_title="生活支援技術：人生の最終段階における介護",
@@ -9,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# カスタムCSS（ルビの視認性とスマホ対応カードデザイン）
+# カスタムCSS（ルビ表示・スマホ最適化・Google Classroom案内デザイン）
 st.markdown("""
 <style>
   ruby { ruby-align: center; }
@@ -22,8 +23,8 @@ st.markdown("""
     margin-bottom: 20px;
   }
   .app-header rt { color: #e2e8f0; }
-  .app-header h1 { font-size: 1.55rem; line-height: 1.8; margin: 0; color: white; }
-  .app-header p { font-size: 0.95rem; line-height: 1.8; margin-top: 8px; opacity: 0.95; }
+  .app-header h1 { font-size: 1.5rem; line-height: 1.85; margin: 0; color: white; }
+  .app-header p { font-size: 0.95rem; line-height: 1.85; margin-top: 8px; opacity: 0.95; }
   .info-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -31,7 +32,7 @@ st.markdown("""
     border-radius: 10px;
     padding: 16px 18px;
     margin-bottom: 16px;
-    line-height: 2.0;
+    line-height: 2.05;
     font-size: 1.02rem;
   }
   .case-card {
@@ -42,6 +43,16 @@ st.markdown("""
     padding: 16px 18px;
     margin-bottom: 16px;
     line-height: 2.05;
+    font-size: 1.02rem;
+  }
+  .gc-card {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 6px solid #15803d;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    line-height: 2.1;
     font-size: 1.02rem;
   }
   .field-label {
@@ -69,6 +80,17 @@ st.markdown("""
     width: 28%;
     color: #1e3a8a;
   }
+  .step-badge {
+    display: inline-block;
+    background: #15803d;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.88rem;
+    font-weight: bold;
+    margin-right: 6px;
+  }
+  .step-badge rt { color: #dcfce7; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,7 +98,7 @@ st.markdown("""
 st.markdown("""
 <div class="app-header">
   <h1>🌿 <ruby>生活<rt>せいかつ</rt></ruby><ruby>支援<rt>しえん</rt></ruby><ruby>技術<rt>ぎじゅつ</rt></ruby>：<ruby>人生<rt>じんせい</rt></ruby>の<ruby>最終<rt>さいしゅう</rt></ruby><ruby>段階<rt>だんかい</rt></ruby>における<ruby>介護<rt>かいご</rt></ruby></h1>
-  <p><ruby>学生用<rt>がくせいよう</rt></ruby><ruby>学習<rt>がくしゅう</rt></ruby><ruby>資料<rt>しりょう</rt></ruby> ＆ ワークシート（90<ruby>分<rt>ぷん</rt></ruby>×2コマ）</p>
+  <p><ruby>学生用<rt>がくせいよう</rt></ruby><ruby>学習<rt>がくしゅう</rt></ruby><ruby>資料<rt>しりょう</rt></ruby> ＆ Google Classroom <ruby>提出用<rt>ていしゅつよう</rt></ruby>ワークシート（90<ruby>分<rt>ぷん</rt></ruby>×2コマ）</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -90,25 +112,39 @@ st.markdown("""
 col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown('<div class="field-label">① クラス<ruby>名<rt>めい</rt></ruby></div>', unsafe_allow_html=True)
-    class_name = st.text_input("class_name", label_visibility="collapsed", placeholder="例：1A")
+    class_name = st.text_input("class_name", label_visibility="collapsed", placeholder="1A")
 with col2:
     st.markdown('<div class="field-label">② <ruby>学籍<rt>がくせき</rt></ruby><ruby>番号<rt>ばんごう</rt></ruby></div>', unsafe_allow_html=True)
-    student_id = st.text_input("student_id", label_visibility="collapsed", placeholder="例：2026001")
+    student_id = st.text_input("student_id", label_visibility="collapsed", placeholder="2026001")
 with col3:
     st.markdown('<div class="field-label">③ <ruby>氏名<rt>しめい</rt></ruby></div>', unsafe_allow_html=True)
-    student_name = st.text_input("student_name", label_visibility="collapsed", placeholder="例：青山 太郎")
+    student_name = st.text_input("student_name", label_visibility="collapsed", placeholder="青山 太郎")
 
 st.divider()
 
-# メニュー切り替え（ルビ付き案内＋番号タブ）
+# メニュー案内（全漢字ルビ付き）
 st.markdown("""
 <div class="field-label">📚 <ruby>学習<rt>がくしゅう</rt></ruby>メニューを<ruby>選<rt>えら</rt></ruby>んでください</div>
-<p style="font-size:0.92rem; line-height:1.9; color:#475569;">
-【1】<ruby>資料<rt>しりょう</rt></ruby>1（エンドオブライフ・ケア） ／ 【2】ワーク1（<ruby>自分<rt>じぶん</rt></ruby>の<ruby>望<rt>のぞ</rt></ruby>み） ／ 【3】<ruby>資料<rt>しりょう</rt></ruby>2（<ruby>他者<rt>たしゃ</rt></ruby>への<ruby>支援<rt>しえん</rt></ruby>） ／ 【4】ワーク2（<ruby>事例<rt>じれい</rt></ruby><ruby>検討<rt>けんとう</rt></ruby>） ／ 【5】<ruby>提出<rt>ていしゅつ</rt></ruby>
+<p style="font-size:0.92rem; line-height:1.95; color:#475569;">
+【1】<ruby>資料<rt>しりょう</rt></ruby>1（エンドオブライフ・ケア） ／ 【2】ワーク1（<ruby>自分<rt>じぶん</rt></ruby>の<ruby>望<rt>のぞ</rt></ruby>み） ／ 【3】<ruby>資料<rt>しりょう</rt></ruby>2（<ruby>他者<rt>たしゃ</rt></ruby>への<ruby>支援<rt>しえん</rt></ruby>） ／ 【4】ワーク2（<ruby>事例<rt>じれい</rt></ruby><ruby>検討<rt>けんとう</rt></ruby>） ／ 【5】Google Classroom <ruby>提出<rt>ていしゅつ</rt></ruby>
 </p>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["【1】", "【2】", "【3】", "【4】", "【5】"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["【1】", "【2】", "【3】", "【4】", "【5】Classroom"])
+
+# 選択肢の辞書（提出ファイル出力用）
+CHOICE_LABELS = {
+    "A": "A：痛みや苦しみがないこと",
+    "B": "B：最期まで自分の頭で考え、判断できること",
+    "C": "C：家族や大切な人と一緒に過ごす時間を持つこと",
+    "D": "D：家族に介護やお金の負担をかけないこと",
+    "E": "E：住み慣れた自宅（自分の部屋）で過ごすこと",
+    "F": "F：医師や設備が整った病院で安心して過ごすこと",
+    "G": "G：最期まで好きなものを口から食べること",
+    "H": "H：トイレやお風呂など、人の手を借りずに自分でできること",
+    "I": "I：自分の趣味ややりたいことを最期まで続けること",
+    "J": "J：その他（自由に考える）",
+}
 
 # ---------------------------------------------------------
 # タブ1：第1コマ 学習資料
@@ -230,46 +266,173 @@ with tab4:
     w2_q3 = st.text_area("w2_q3", height=110, label_visibility="collapsed")
 
 # ---------------------------------------------------------
-# タブ5：確認・提出用ファイルダウンロード
+# タブ5：Google Classroom 提出画面
 # ---------------------------------------------------------
 with tab5:
     st.markdown("""
-    <h3>📤 <ruby>回答<rt>かいとう</rt></ruby>の<ruby>確認<rt>かくにん</rt></ruby>と<ruby>提出用<rt>ていしゅつよう</rt></ruby>ファイルの<ruby>保存<rt>ほぞん</rt></ruby></h3>
-    <div class="info-card">
-      クラス<ruby>名<rt>めい</rt></ruby>・<ruby>学籍<rt>がくせき</rt></ruby><ruby>番号<rt>ばんごう</rt></ruby>・<ruby>氏名<rt>しめい</rt></ruby>と、ワーク1・ワーク2の<ruby>入力<rt>にゅうりょく</rt></ruby>が<ruby>終<rt>お</rt></ruby>わったら、<ruby>下<rt>した</rt></ruby>のボタンからCSVファイルを<ruby>保存<rt>ほぞん</rt></ruby>して<ruby>先生<rt>せんせい</rt></ruby>の<ruby>指示<rt>しじ</rt></ruby>どおりに<ruby>提出<rt>ていしゅつ</rt></ruby>してください。
-    </div>
+    <h3>🎓 Google Classroom への<ruby>提出<rt>ていしゅつ</rt></ruby></h3>
     """, unsafe_allow_html=True)
 
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    df_submit = pd.DataFrame([{
-        "提出日時": now_str,
-        "クラス名": class_name,
-        "学籍番号": student_id,
-        "氏名": student_name,
-        "ワーク1_選択項目": " / ".join(w1_choices),
-        "ワーク1_選んだ理由": w1_reason,
-        "ワーク1_グループの気づき": w1_reflection,
-        "ワーク2_課題1_長女の気持ち": w2_q1,
-        "ワーク2_課題2_声かけと連携": w2_q2,
-        "ワーク2_課題3_生活支援技術": w2_q3,
-    }])
+    # 教室設定に応じてURLを差し替え可能なリンク（デフォルトはClassroomトップ）
+    CLASSROOM_URL = "https://classroom.google.com/"
 
-    if not (class_name and student_id and student_name):
+    if not (class_name.strip() and student_id.strip() and student_name.strip()):
         st.markdown("""
         <div class="case-card">
-          ⚠️ <ruby>画面<rt>がめん</rt></ruby>の<ruby>一番上<rt>いちばんうえ</rt></ruby>にある「①クラス<ruby>名<rt>めい</rt></ruby>」「②<ruby>学籍<rt>がくせき</rt></ruby><ruby>番号<rt>ばんごう</rt></ruby>」「③<ruby>氏名<rt>しめい</rt></ruby>」をすべて<ruby>入力<rt>にゅうりょく</rt></ruby>してください。
+          ⚠️ <ruby>画面<rt>がめん</rt></ruby>の<ruby>一番上<rt>いちばんうえ</rt></ruby>にある「①クラス<ruby>名<rt>めい</rt></ruby>」「②<ruby>学籍<rt>がくせき</rt></ruby><ruby>番号<rt>ばんごう</rt></ruby>」「③<ruby>氏名<rt>しめい</rt></ruby>」をすべて<ruby>入力<rt>にゅうりょく</rt></ruby>すると、<ruby>提出用<rt>ていしゅつよう</rt></ruby>ファイルが<ruby>作<rt>つく</rt></ruby>られます。
         </div>
         """, unsafe_allow_html=True)
     else:
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        selected_full = [CHOICE_LABELS.get(c, c) for c in w1_choices]
+        selected_str = " ／ ".join(selected_full) if selected_full else "（未選択）"
+
+        # 1) Google Classroom上で綺麗に開ける提出用HTMLレポート生成
+        safe_cls = html.escape(class_name.strip())
+        safe_id = html.escape(student_id.strip())
+        safe_name = html.escape(student_name.strip())
+        safe_sel = html.escape(selected_str)
+        safe_w1_r = html.escape(w1_reason).replace("\n", "<br>")
+        safe_w1_ref = html.escape(w1_reflection).replace("\n", "<br>")
+        safe_w2_1 = html.escape(w2_q1).replace("\n", "<br>")
+        safe_w2_2 = html.escape(w2_q2).replace("\n", "<br>")
+        safe_w2_3 = html.escape(w2_q3).replace("\n", "<br>")
+
+        report_html = f"""<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>生活支援技術ワークシート_{safe_cls}_{safe_id}_{safe_name}</title>
+<style>
+  body {{ font-family: "Meiryo", sans-serif; max-width: 800px; margin: 24px auto; padding: 0 16px; color: #1e293b; line-height: 1.8; }}
+  h1 {{ font-size: 1.4rem; color: #1e3a8a; border-bottom: 3px solid #1e3a8a; padding-bottom: 8px; }}
+  h2 {{ font-size: 1.15rem; color: #0f766e; margin-top: 24px; background: #f0fdf4; padding: 8px 12px; border-left: 5px solid #0f766e; }}
+  .meta {{ background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }}
+  .q-box {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; background: #ffffff; }}
+  .q-title {{ font-weight: bold; color: #334155; margin-bottom: 6px; }}
+  .ans {{ color: #0f172a; min-height: 1.5em; }}
+</style>
+</head>
+<body>
+  <h1>生活支援技術：人生の最終段階における介護（提出レポート）</h1>
+  <div class="meta">
+    <strong>作成日時：</strong>{now_str}<br>
+    <strong>クラス名：</strong>{safe_cls} ｜ <strong>学籍番号：</strong>{safe_id} ｜ <strong>氏名：</strong>{safe_name}
+  </div>
+
+  <h2>【ワーク1】私にとって望ましい最期を考える</h2>
+  <div class="q-box">
+    <div class="q-title">質問1：最も大切にしたいこと（3つ選択）</div>
+    <div class="ans">{safe_sel}</div>
+  </div>
+  <div class="q-box">
+    <div class="q-title">質問2：選んだ理由</div>
+    <div class="ans">{safe_w1_r}</div>
+  </div>
+  <div class="q-box">
+    <div class="q-title">質問3：グループで話し合って気づいたこと</div>
+    <div class="ans">{safe_w1_ref}</div>
+  </div>
+
+  <h2>【ワーク2】事例検討：他者にとって望ましい最期を支える（Aさん・長女への支援）</h2>
+  <div class="q-box">
+    <div class="q-title">課題1：長女が抱えている気持ち（不安や迷い）</div>
+    <div class="ans">{safe_w2_1}</div>
+  </div>
+  <div class="q-box">
+    <div class="q-title">課題2：最初の声かけと多職種連携</div>
+    <div class="ans">{safe_w2_2}</div>
+  </div>
+  <div class="q-box">
+    <div class="q-title">課題3：Aさんらしく心地よく過ごすための生活支援技術の工夫</div>
+    <div class="ans">{safe_w2_3}</div>
+  </div>
+</body>
+</html>"""
+
+        # 2) 教員一括集計用のCSVデータ生成
+        df_submit = pd.DataFrame([{
+            "作成日時": now_str,
+            "クラス名": class_name.strip(),
+            "学籍番号": student_id.strip(),
+            "氏名": student_name.strip(),
+            "ワーク1_選択項目": selected_str,
+            "ワーク1_選んだ理由": w1_reason,
+            "ワーク1_グループの気づき": w1_reflection,
+            "ワーク2_課題1_長女の気持ち": w2_q1,
+            "ワーク2_課題2_声かけと連携": w2_q2,
+            "ワーク2_課題3_生活支援技術": w2_q3,
+        }])
         csv_buf = io.StringIO()
         df_submit.to_csv(csv_buf, index=False, encoding="utf-8-sig")
-        safe_id = student_id.strip() or "student"
-        file_name = f"eol_care_{class_name}_{safe_id}.csv"
 
-        st.markdown('<div class="field-label">▼ <ruby>下<rt>した</rt></ruby>のボタンをおして<ruby>保存<rt>ほぞん</rt></ruby>（ダウンロード）</div>', unsafe_allow_html=True)
-        st.download_button(
-            label="📥 CSVダウンロード",
-            data=csv_buf.getvalue().encode("utf-8-sig"),
-            file_name=file_name,
-            mime="text/csv"
+        # 3) Classroom貼り付け用プレーンテキスト生成
+        copy_text = f"""【生活支援技術：人生の最終段階における介護】
+クラス名：{class_name.strip()} ／ 学籍番号：{student_id.strip()} ／ 氏名：{student_name.strip()}
+作成日時：{now_str}
+
+■ ワーク1：私にとって望ましい最期
+[選んだ項目] {selected_str}
+[選んだ理由]
+{w1_reason}
+[グループの気づき]
+{w1_reflection}
+
+■ ワーク2：事例検討（他者にとって望ましい最期）
+[課題1：長女の気持ち]
+{w2_q1}
+[課題2：声かけと多職種連携]
+{w2_q2}
+[課題3：生活支援技術の工夫]
+{w2_q3}
+"""
+
+        base_filename = f"生活支援技術_終末期_{class_name.strip()}_{student_id.strip()}_{student_name.strip()}"
+
+        st.markdown("""
+        <div class="gc-card">
+          <strong>📌 Google Classroom への<ruby>提出<rt>ていしゅつ</rt></ruby><ruby>手順<rt>てじゅん</rt></ruby>（3ステップ）</strong><br>
+          <span class="step-badge"><ruby>手順<rt>てじゅん</rt></ruby> 1</span> <ruby>下<rt>した</rt></ruby>のボタンから<strong><ruby>提出用<rt>ていしゅつよう</rt></ruby>ファイル（HTML または CSV）</strong>をスマホ・PCに<ruby>保存<rt>ほぞん</rt></ruby>します。<br>
+          <span class="step-badge"><ruby>手順<rt>てじゅん</rt></ruby> 2</span> <strong>Google Classroom</strong> を<ruby>開<rt>ひら</rt></ruby>き、「<ruby>授業<rt>じゅぎょう</rt></ruby>」タブから<ruby>今日<rt>きょう</rt></ruby>の<ruby>課題<rt>かだい</rt></ruby>を<ruby>選<rt>えら</rt></ruby>びます。<br>
+          <span class="step-badge"><ruby>手順<rt>てじゅん</rt></ruby> 3</span> 「<strong>＋ <ruby>課題<rt>かだい</rt></ruby>を<ruby>追加<rt>ついか</rt></ruby>または<ruby>作成<rt>さくせい</rt></ruby></strong>」▶「<strong>ファイル</strong>」から<ruby>保存<rt>ほぞん</rt></ruby>したファイルを<ruby>添付<rt>てんぷ</rt></ruby>し、<strong>「<ruby>提出<rt>ていしゅつ</rt></ruby>」</strong>をおします。
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="field-label">▼ ステップ1：<ruby>提出用<rt>ていしゅつよう</rt></ruby>ファイルを<ruby>保存<rt>ほぞん</rt></ruby>する（<ruby>先生<rt>せんせい</rt></ruby>の<ruby>指示<rt>しじ</rt></ruby>に<ruby>合<rt>あ</rt></ruby>わせて<ruby>選<rt>えら</rt></ruby>んでください）</div>', unsafe_allow_html=True)
+
+        dl_col1, dl_col2 = st.columns(2)
+        with dl_col1:
+            st.markdown('<p style="font-size:0.9rem; margin-bottom:4px;">📄 <strong>レポート<ruby>形式<rt>けいしき</rt></ruby>（Classroomでそのまま<ruby>読<rt>よ</rt></ruby>める）</strong></p>', unsafe_allow_html=True)
+            st.download_button(
+                label="📥 HTMLファイルをダウンロード",
+                data=report_html.encode("utf-8"),
+                file_name=f"{base_filename}.html",
+                mime="text/html",
+                use_container_width=True
+            )
+        with dl_col2:
+            st.markdown('<p style="font-size:0.9rem; margin-bottom:4px;">📊 <strong>データ<ruby>形式<rt>けいしき</rt></ruby>（Excel<ruby>集計用<rt>しゅうけいよう</rt></ruby>）</strong></p>', unsafe_allow_html=True)
+            st.download_button(
+                label="📥 CSVファイルをダウンロード",
+                data=csv_buf.getvalue().encode("utf-8-sig"),
+                file_name=f"{base_filename}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+        st.markdown('<div class="field-label">▼ ステップ2：Google Classroom を<ruby>開<rt>ひら</rt></ruby>いて<ruby>添付<rt>てんぷ</rt></ruby>・<ruby>提出<rt>ていしゅつ</rt></ruby>する</div>', unsafe_allow_html=True)
+        st.link_button(
+            "🚀 Google Classroom を開く",
+            CLASSROOM_URL,
+            use_container_width=True
         )
+
+        st.divider()
+
+        st.markdown("""
+        <div class="field-label">💡 ファイルの<ruby>添付<rt>てんぷ</rt></ruby>がうまくできないとき（コピーして<ruby>提出<rt>ていしゅつ</rt></ruby>）</div>
+        <p style="font-size:0.92rem; line-height:1.9; color:#475569;">
+        <ruby>下<rt>した</rt></ruby>の<ruby>枠<rt>わく</rt></ruby>の<ruby>右上<rt>みぎうえ</rt></ruby>にある「コピー」マークをおすと、<ruby>回答<rt>かいとう</rt></ruby>をすべてコピーできます。Google Classroom の「ドキュメント」や「コメント」に<ruby>貼<rt>は</rt></ruby>り<ruby>付<rt>つ</rt></ruby>けて<ruby>提出<rt>ていしゅつ</rt></ruby>することもできます。
+        </p>
+        """, unsafe_allow_html=True)
+        st.code(copy_text, language="text")
